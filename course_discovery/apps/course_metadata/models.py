@@ -14,6 +14,7 @@ from simple_history.models import HistoricalRecords
 from sortedm2m.fields import SortedManyToManyField
 
 from course_discovery.apps.core.models import Currency
+from course_discovery.apps.core.mixins import ModelPermissionsMixin
 from course_discovery.apps.course_metadata.query import CourseQuerySet
 from course_discovery.apps.course_metadata.utils import clean_query
 from course_discovery.apps.ietf_language_tags.models import LanguageTag
@@ -91,7 +92,7 @@ class SyllabusItem(AbstractValueModel):
     parent = models.ForeignKey('self', blank=True, null=True, related_name='children')
 
 
-class Organization(TimeStampedModel):
+class Organization(ModelPermissionsMixin, TimeStampedModel):
     """ Organization model. """
     key = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255, null=True, blank=True)

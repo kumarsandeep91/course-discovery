@@ -29,7 +29,7 @@ from course_discovery.apps.api.renderers import AffiliateWindowXMLRenderer, Cour
 from course_discovery.apps.catalogs.models import Catalog
 from course_discovery.apps.core.utils import SearchQuerySetWrapper
 from course_discovery.apps.course_metadata.constants import COURSE_ID_REGEX, COURSE_RUN_ID_REGEX
-from course_discovery.apps.course_metadata.models import Course, CourseRun, Seat, Program
+from course_discovery.apps.course_metadata.models import Course, CourseRun, Seat, Program, Organization
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -168,6 +168,67 @@ class CatalogViewSet(viewsets.ModelViewSet):
             id=id, date=datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')
         )
         return response
+
+
+class OrganizerViewSet(viewsets.ModelViewSet):
+    """
+    Organization resource.
+    """
+    filter_backends = (PermissionsFilter,)
+    lookup_field = 'id'
+    permission_classes = (DRYPermissions,)
+    queryset = Organization.objects.all()
+    serializer_class = serializers.OrganizationSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        """ Create a new organization. """
+        data = request.data.copy()
+        usernames = request.data.get('viewers', ())
+
+        # Add support for parsing a comma-separated list from Swagger
+        if isinstance(usernames, str):
+            usernames = usernames.split(',')
+            data.setlist('viewers', usernames)
+
+        # Ensure the users exist
+        for username in usernames:
+            User.objects.get_or_create(username=username)
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def destroy(self, request, *args, **kwargs):
+        """ Destroy an organization. """
+        return super(OrganizerViewSet, self).destroy(request, *args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        """ Retrieve a list of all organizations.
+        ---
+        parameters:
+            - name: username
+              description: User whose catalogs should be retrieved.
+              required: false
+              type: string
+              paramType: query
+              multiple: false
+        """
+        return super(OrganizerViewSet, self).list(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        """ Update one, or more, fields for an organization. """
+        return super(OrganizerViewSet, self).partial_update(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        """ Retrieve details for an organization. """
+        return super(OrganizerViewSet, self).retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """ Update an organization. """
+        return super(OrganizerViewSet, self).update(request, *args, **kwargs)
 
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
