@@ -9,6 +9,10 @@ from django.http import Http404
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views.generic import View
+from rest_framework import response, schemas
+from rest_framework.decorators import api_view, renderer_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_swagger.renderers import OpenAPIRenderer, SwaggerUIRenderer
 
 from course_discovery.apps.core.constants import Status
 
@@ -84,3 +88,11 @@ class AutoAuth(View):
         login(request, user)
 
         return redirect('/')
+
+
+@api_view()
+@permission_classes((IsAuthenticated, ))
+@renderer_classes([OpenAPIRenderer, SwaggerUIRenderer])
+def schema_view(request):
+    generator = schemas.SchemaGenerator(title='Course Catalog API')
+    return response.Response(generator.get_schema(request=request))
