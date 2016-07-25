@@ -6,7 +6,12 @@ class BaseWrapper(object):
         self.wrapped_obj = wrapped_obj
 
     def __getattr__(self, attr):
-        return self.wrapped_obj.__getattribute__(attr)
+        orig_attr = self.wrapped_obj.__getattribute__(attr)
+        if callable(orig_attr):
+            def hooked(*args, **kwargs):  # pylint: disable=unused-variable
+                return orig_attr(*args, **kwargs)
+        else:
+            return orig_attr
 
 
 class CourseRunWrapper(BaseWrapper):
@@ -17,4 +22,4 @@ class CourseRunWrapper(BaseWrapper):
 
     @property
     def partner(self):
-        return '/'.join([org.key for org in self.wrapped_obj.course.owners.all()])
+        return '/'.join([org.key for org in self.wrapped_obj.course.organizations.all()])
