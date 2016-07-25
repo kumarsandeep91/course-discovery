@@ -1,3 +1,6 @@
+"""
+Course publisher forms.
+"""
 from django import forms
 
 from course_discovery.apps.publisher.models import Course, CourseRun, Seat
@@ -39,7 +42,6 @@ class CourseRunForm(BaseCourseForm):
     class Meta:
         model = CourseRun
         fields = '__all__'
-        exclude = ('course',)
 
 
 class SeatForm(BaseCourseForm):
