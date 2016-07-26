@@ -14,11 +14,14 @@ class CreateCourseView(edit.CreateView):
     model = Course
     form_class = CourseForm
     template_name = 'publisher/course_form.html'
-    success_url = '/publisher/publisher_course_runs/'
+    success_url = 'publisher:publisher_courses_edit'
 
     def form_valid(self, form):
         self.object = form.save()
         return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(self.success_url, kwargs={'pk': self.object.id})
 
 
 class UpdateCourseView(edit.UpdateView):
@@ -26,11 +29,14 @@ class UpdateCourseView(edit.UpdateView):
     model = Course
     form_class = CourseForm
     template_name = 'publisher/course_form.html'
-    success_url = '/publisher/publisher_course_runs/'
+    success_url = 'publisher:publisher_courses_edit'
 
     def form_valid(self, form):
         self.object = form.save()
         return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(self.success_url, kwargs={'pk': self.object.id})
 
 
 class CreateCourseRunView(edit.CreateView):
@@ -38,7 +44,7 @@ class CreateCourseRunView(edit.CreateView):
     model = CourseRun
     form_class = CourseRunForm
     template_name = 'publisher/course_run_form.html'
-    success_url = 'publisher:publisher_course_run_detail'
+    success_url = 'publisher:publisher_course_runs_edit'
 
     def form_valid(self, form):
         self.object = form.save()
@@ -53,7 +59,7 @@ class UpdateCourseRunView(edit.UpdateView):
     model = CourseRun
     form_class = CourseRunForm
     template_name = 'publisher/course_run_form.html'
-    success_url = 'publisher:publisher_course_run_detail'
+    success_url = 'publisher:publisher_course_runs_edit'
 
     def form_valid(self, form):
         self.object = form.save()
