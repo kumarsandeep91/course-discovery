@@ -4,8 +4,8 @@ Course publisher views.
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.views.generic import edit
-from course_discovery.apps.publisher.forms import CourseForm, CourseRunForm
-from course_discovery.apps.publisher.models import Course, CourseRun
+from course_discovery.apps.publisher.forms import CourseForm, CourseRunForm, SeatForm
+from course_discovery.apps.publisher.models import Course, CourseRun, Seat
 
 
 # pylint: disable=attribute-defined-outside-init
@@ -14,7 +14,7 @@ class CreateCourseView(edit.CreateView):
     model = Course
     form_class = CourseForm
     template_name = 'publisher/course_form.html'
-    success_url = '.'
+    success_url = '/publisher/publisher_course_runs/'
 
     def form_valid(self, form):
         self.object = form.save()
@@ -26,7 +26,7 @@ class UpdateCourseView(edit.UpdateView):
     model = Course
     form_class = CourseForm
     template_name = 'publisher/course_form.html'
-    success_url = '.'
+    success_url = '/publisher/publisher_course_runs/'
 
     def form_valid(self, form):
         self.object = form.save()
@@ -54,6 +54,36 @@ class UpdateCourseRunView(edit.UpdateView):
     form_class = CourseRunForm
     template_name = 'publisher/course_run_form.html'
     success_url = 'publisher:publisher_course_run_detail'
+
+    def form_valid(self, form):
+        self.object = form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(self.success_url, kwargs={'pk': self.object.id})
+
+
+class CreateSeatView(edit.CreateView):
+    """ Create Seat View."""
+    model = Seat
+    form_class = SeatForm
+    template_name = 'publisher/seat_form.html'
+    success_url = 'publisher:publisher_seats_edit'
+
+    def form_valid(self, form):
+        self.object = form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(self.success_url, kwargs={'pk': self.object.id})
+
+
+class UpdateSeatView(edit.UpdateView):
+    """ Update Seat View."""
+    model = Seat
+    form_class = SeatForm
+    template_name = 'publisher/seat_form.html'
+    success_url = 'publisher:publisher_seats_edit'
 
     def form_valid(self, form):
         self.object = form.save()
