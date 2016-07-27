@@ -19,6 +19,9 @@ class BaseCourseForm(forms.ModelForm):
                 field_classes = 'field-input input-select'
             if isinstance(field, forms.BooleanField):
                 field_classes = 'field-input input-checkbox'
+            if isinstance(field, forms.DateTimeField):
+                field_classes = '{} add-pikaday'.format(field_classes)
+                field.input_formats = ['YYYY-MM-DDTHH:mm:ss']
             if isinstance(field, forms.ModelMultipleChoiceField):
                 field_classes = 'field-input'
 
@@ -50,3 +53,24 @@ class SeatForm(BaseCourseForm):
     class Meta:
         model = Seat
         fields = '__all__'
+        exclude = ('currency',)
+
+    def save(self, commit=True):
+        seat = super(SeatForm, self).save(commit=False)
+        if seat.type in ['honor', 'audit']:
+            seat.price = 0.00
+            seat.upgrade_deadline = None
+            seat.credit_provider = ''
+            seat.credit_hours = None
+        if seat.type == 'verified':
+            seat.credit_provider = ''
+            seat.credit_hours = None
+        if seat.type in ['professional', 'no-id-professional']:
+            seat.upgrade_deadline = None
+            seat.credit_provider = ''
+            seat.credit_hours = None
+
+        if commit:
+            seat.save()
+
+        return seat
