@@ -152,9 +152,9 @@ class Seat(TimeStampedModel, ChangedByMixin):
         'default': 0.00,
     }
     course_run = models.ForeignKey(CourseRun, related_name='seats')
-    type = models.CharField(max_length=63, choices=SEAT_TYPE_CHOICES)
+    type = models.CharField(max_length=63, choices=SEAT_TYPE_CHOICES, verbose_name='Course type')
     price = models.DecimalField(**PRICE_FIELD_CONFIG)
-    currency = models.ForeignKey(Currency, related_name='publisher_seats')
+    currency = models.ForeignKey(Currency, default='USD', related_name='publisher_seats')
     upgrade_deadline = models.DateTimeField(null=True, blank=True)
     credit_provider = models.CharField(max_length=255, null=True, blank=True)
     credit_hours = models.IntegerField(null=True, blank=True)
