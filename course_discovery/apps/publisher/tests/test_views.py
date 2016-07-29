@@ -117,6 +117,12 @@ class SeatsCreateUpdateViewTests(TestCase):
         self.seat_dict = model_to_dict(self.seat)
         self.seat_dict.pop('upgrade_deadline')
 
+    def test_seat_view_page(self):
+        """ Verify that we can open new seat page. """
+        response = self.client.get(reverse('publisher:publisher_seats_new'))
+        # Assert that we can load seat page.
+        self.assertEqual(response.status_code, 200)
+
     def test_create_seat(self):
         """ Verify that we can create a new seat. """
         seat_price = 670.00
@@ -132,14 +138,12 @@ class SeatsCreateUpdateViewTests(TestCase):
 
         self.assertEqual(seat.price, seat_price)
 
-        response = self.client.get(reverse('publisher:publisher_seats_edit', kwargs={'pk': self.seat.id}))
-        # Assert that we can get created seat page.
-        self.assertEqual(response.status_code, 200)
-
     def test_update_seat(self):
         """ Verify that we can update an existing seat. """
+        self.assertEqual(self.seat.type, Seat.PROFESSIONAL)
         updated_seat_price = 470.00
         self.seat_dict['price'] = updated_seat_price
+        self.seat_dict['type'] = Seat.VERIFIED
         self.assertNotEqual(self.seat.price, updated_seat_price)
         response = self.client.post(
             reverse('publisher:publisher_seats_edit', kwargs={'pk': self.seat.id}),
@@ -156,3 +160,20 @@ class SeatsCreateUpdateViewTests(TestCase):
         seat = Seat.objects.get(id=self.seat.id)
         # Assert that seat is updated.
         self.assertEqual(seat.price, updated_seat_price)
+        self.assertEqual(seat.type, Seat.VERIFIED)
+
+        self.seat_dict['type'] = Seat.HONOR
+        response = self.client.post(
+            reverse('publisher:publisher_seats_edit', kwargs={'pk': self.seat.id}),
+            self.seat_dict
+        )
+        seat = Seat.objects.get(id=self.seat.id)
+        # Assert that we change seat type.
+        self.assertEqual(seat.type, Seat.HONOR)
+
+        self.assertRedirects(
+            response,
+            expected_url=reverse('publisher:publisher_seats_edit', kwargs={'pk': self.seat.id}),
+            status_code=302,
+            target_status_code=200
+        )
