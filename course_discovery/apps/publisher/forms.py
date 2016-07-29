@@ -57,15 +57,15 @@ class SeatForm(BaseCourseForm):
 
     def save(self, commit=True):
         seat = super(SeatForm, self).save(commit=False)
-        if seat.type in ['honor', 'audit']:
+        if seat.type in [Seat.HONOR, Seat.AUDIT]:
             seat.price = 0.00
             seat.upgrade_deadline = None
             seat.credit_provider = ''
             seat.credit_hours = None
-        if seat.type == 'verified':
+        if seat.type == Seat.VERIFIED:
             seat.credit_provider = ''
             seat.credit_hours = None
-        if seat.type in ['professional', 'no-id-professional']:
+        if seat.type in [Seat.PROFESSIONAL, Seat.NO_ID_PROFESSIONAL]:
             seat.upgrade_deadline = None
             seat.credit_provider = ''
             seat.credit_hours = None

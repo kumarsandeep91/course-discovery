@@ -21,12 +21,14 @@ before_install:
 install:
     - pip install -U pip wheel codecov
     - pip install -r requirements/test.txt
+    - make requirement.js
 
 before_script:
 # Give Elasticsearch time to start
   - sleep 10
 
 script:
+    - make static -e DJANGO_SETTINGS_MODULE="course_discovery.settings.test"
     - make validate
 
 after_success:

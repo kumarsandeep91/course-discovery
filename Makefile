@@ -32,6 +32,7 @@ help:
 static:
 	$(NODE_BIN)/r.js -o build.js
 	python manage.py collectstatic --noinput
+	python manage.py compress -v0 --force
 
 clean_static:
 	rm -rf assets/ course_discovery/static/build
