@@ -109,6 +109,11 @@ class ExpectedLearningItem(AbstractValueModel):
     pass
 
 
+class JobOutlookItem(AbstractValueModel):
+    """ JobOutlookItem model. """
+    pass
+
+
 class SyllabusItem(AbstractValueModel):
     """ SyllabusItem model. """
     parent = models.ForeignKey('self', blank=True, null=True, related_name='children')
@@ -131,6 +136,8 @@ class Organization(TimeStampedModel):
     description = models.TextField(null=True, blank=True)
     homepage_url = models.URLField(max_length=255, null=True, blank=True)
     logo_image = models.ForeignKey(Image, null=True, blank=True)
+    banner_image = models.ForeignKey(Image, null=True, blank=True)
+
     partner = models.ForeignKey(Partner, null=True, blank=False)
 
     history = HistoricalRecords()
@@ -186,10 +193,10 @@ class Course(TimeStampedModel):
             "Course number format e.g CS002x, BIO1.1x, BIO1.2x"
         )
     )
+    partner = models.ForeignKey(Partner, null=True, blank=False)
 
     history = HistoricalRecords()
     objects = CourseQuerySet.as_manager()
-    partner = models.ForeignKey(Partner, null=True, blank=False)
 
     @property
     def owners(self):
@@ -453,49 +460,60 @@ class CourseOrganization(TimeStampedModel):
         )
 
 
+class Endorsement(TimeStampedModel):
+    quote = models.TextField(blank=False, null=False)
+    name = models.CharField(max_length=255, blank=False, null=False)
+    title = models.CharField(max_length=255, blank=False, null=False)
+
+
+class CorporateEndorsement(TimeStampedModel):
+    statement = models.TextField(blank=False, null=False)
+    image = models.ForeignKey(Image, blank=True, null=True)
+    individual_endorsements = SortedManyToManyField(Endorsement)
+
+
+class Testimonial(TimeStampedModel):
+    quote = models.TextField(blank=False, null=False)
+    name = models.CharField(max_length=255, blank=False, null=False)
+    image = models.ForeignKey(Image, blank=True, null=True)
+
+
+class FAQ(TimeStampedModel):
+    question = models.TextField(blank=False, null=False)
+    answer = models.TextField(blank=False, null=False)
+
+
 class Program(TimeStampedModel):
     """
     Representation of a Program.
     """
-    uuid = models.UUIDField(
-        blank=True,
-        default=uuid4,
-        editable=False,
-        unique=True,
-        verbose_name=_('UUID')
-    )
+    uuid = models.UUIDField(blank=True, default=uuid4, editable=False, unique=True, verbose_name=_('UUID'))
+    title = models.CharField(help_text=_('The user-facing display title for this Program.'), max_length=255,
+                             unique=True)
+    subtitle = models.CharField(help_text=_('A brief, descriptive subtitle for the Program.'), max_length=255,
+                                blank=True)
+    category = models.CharField(help_text=_('The category / type of Program.'), max_length=32)
+    status = models.CharField(help_text=_('The lifecycle status of this Program.'), max_length=24)
+    marketing_slug = models.CharField(help_text=_('Slug used to generate links to the marketing site'), blank=True,
+                                      max_length=255)
 
-    title = models.CharField(
-        help_text=_('The user-facing display title for this Program.'),
-        max_length=255,
-        unique=True,
-    )
+    authoring_organizations = models.ManyToManyField(Organization, blank=True)
+    credit_backing_organizations = models.ManyToManyField(Organization, blank=True)
+    description = models.TextField(help_text=_('Overview...because Jasper'))
+    banner_image = models.ForeignKey(Image, default=None, null=True, blank=True)
+    card_image = models.ForeignKey(Image, default=None, null=True, blank=True)
+    video = models.ForeignKey(Video, default=None, null=True, blank=True)
+    expected_learning_items = SortedManyToManyField(ExpectedLearningItem, blank=True)
+    corporate_endorsements = SortedManyToManyField(CorporateEndorsement, blank=True)
+    # TODO Limit to 140 characters in UI
+    job_outlook_items = SortedManyToManyField(JobOutlookItem, blank=True)
+    weeks_to_complete = models.PositiveSmallIntegerField()
 
-    subtitle = models.CharField(
-        help_text=_('A brief, descriptive subtitle for the Program.'),
-        max_length=255,
-        blank=True,
-    )
-
-    category = models.CharField(
-        help_text=_('The category / type of Program.'),
-        max_length=32,
-    )
-
-    status = models.CharField(
-        help_text=_('The lifecycle status of this Program.'),
-        max_length=24,
-    )
-
-    marketing_slug = models.CharField(
-        help_text=_('Slug used to generate links to the marketing site'),
-        blank=True,
-        max_length=255
-    )
-
-    image = models.ForeignKey(Image, default=None, null=True, blank=True)
-
-    organizations = models.ManyToManyField(Organization, blank=True)
+    # TODO Enforce min < max in UI
+    min_hours_effort_per_week = models.PositiveSmallIntegerField()
+    max_hours_effort_per_week = models.PositiveSmallIntegerField()
+    testimonials = SortedManyToManyField(Testimonial, blank=True)
+    faq = SortedManyToManyField(FAQ, blank=True)
 
     partner = models.ForeignKey(Partner, null=True, blank=False)
 
@@ -516,6 +534,41 @@ class Program(TimeStampedModel):
             return self.image.src
 
         return None
+
+    @property
+    def languages(self):
+        # TODO Pull from courses
+        raise NotImplementedError
+
+    @property
+    def transcript_languages(self):
+        # TODO Pull from courses
+        raise NotImplementedError
+
+    @property
+    def subjects(self):
+        # TODO Pull from courses
+        raise NotImplementedError
+
+    @property
+    def price_range(self):
+        # TODO Pull from courses
+        raise NotImplementedError
+
+    @property
+    def start(self):
+        # TODO Pull from courses
+        raise NotImplementedError
+
+    @property
+    def instructors(self):
+        # TODO Pull from courses
+        raise NotImplementedError
+
+    @property
+    def availability(self):
+        # TODO Determine based on start date of courses
+        raise NotImplementedError
 
 
 class PersonSocialNetwork(AbstractSocialNetworkModel):
