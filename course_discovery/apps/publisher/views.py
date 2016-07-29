@@ -45,7 +45,6 @@ class CreateCourseRunView(edit.CreateView):
     """ Create Course Run View."""
     model = CourseRun
     form_class = CourseRunForm
-    form_second_class = SeatForm
     template_name = 'publisher/course_run_form.html'
     success_url = 'publisher:publisher_course_runs_edit'
 

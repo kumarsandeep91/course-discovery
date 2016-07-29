@@ -8,6 +8,11 @@
     <div class="layout-full layout">
         <div class="card course-form">
             <h4 class="hd-4">{% trans "Course Run Form" %}</h4>
+            {% if object.id %}
+                <a href="{% url 'publisher:publisher_seats_new' %}" target="_blank" class="btn btn-neutral btn-add">
+                    <span class="icon fa fa-plus" aria-hidden="true"></span> Add Seat
+                </a>
+            {% endif %}
             <form class="form" method="post" action=""> {% csrf_token %}
                 <fieldset class="form-group">
                     {% for field in form %}
