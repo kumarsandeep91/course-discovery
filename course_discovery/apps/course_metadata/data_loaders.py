@@ -2,9 +2,10 @@
 import abc
 import logging
 from decimal import Decimal
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode
 
 import html2text
+import requests
 from dateutil.parser import parse
 from django.utils.functional import cached_property
 from edx_rest_api_client.client import EdxRestApiClient
@@ -33,7 +34,7 @@ class AbstractDataLoader(metaclass=abc.ABCMeta):
     PAGE_SIZE = 50
     SUPPORTED_TOKEN_TYPES = ('bearer', 'jwt',)
 
-    def __init__(self, partner, api_url, access_token, token_type):
+    def __init__(self, partner, api_url, access_token=None, token_type=None):
         """
         Arguments:
             partner (Partner): Partner which owns the APIs and data being loaded
@@ -41,10 +42,11 @@ class AbstractDataLoader(metaclass=abc.ABCMeta):
             access_token (str): OAuth2 access token
             token_type (str): The type of access token passed in (e.g. Bearer, JWT)
         """
-        token_type = token_type.lower()
+        if token_type:
+            token_type = token_type.lower()
 
-        if token_type not in self.SUPPORTED_TOKEN_TYPES:
-            raise ValueError('The token type {token_type} is invalid!'.format(token_type=token_type))
+            if token_type not in self.SUPPORTED_TOKEN_TYPES:
+                raise ValueError('The token type {token_type} is invalid!'.format(token_type=token_type))
 
         self.access_token = access_token
         self.token_type = token_type
@@ -573,3 +575,76 @@ class ProgramsApiDataLoader(AbstractDataLoader):
             image, __ = Image.objects.update_or_create(src=image_url, defaults=defaults)
 
         return image
+
+
+class MarketingSiteDataLoader(AbstractDataLoader):
+    def __init__(self, partner, api_url, access_token=None, token_type=None):
+        super(MarketingSiteDataLoader, self).__init__(partner, api_url, access_token, token_type)
+
+        if not (self.partner.marketing_site_api_username and self.partner.marketing_site_api_password):
+            raise Exception('Marketing Site API credentials are not properly configured!')
+
+    @cached_property
+    def api_client(self):
+        username = self.partner.marketing_site_api_username
+
+        # Login by posting to the login form
+        login_data = {
+            'name': username,
+            'pass': self.partner.marketing_site_api_password,
+            'form_id': 'user_login',
+            'op': 'Log in',
+        }
+
+        session = requests.Session()
+        login_url = '{root}/user'.format(root=self.api_url)
+        response = session.post(login_url, data=login_data)
+        expected_url = '{root}/users/{username}'.format(root=self.api_url, username=username)
+        if not (response.status_code == 200 and response.url == expected_url):
+            raise Exception('Login failed!')
+
+        return session
+
+    def ingest(self):  # pragma: no cover
+        """ Load data for all supported objects (e.g. courses, runs). """
+        self.ingest_xseries(self.api_client)
+
+    def ingest_xseries(self, client):
+        kwargs = {
+            'type': 'xseries',
+            'max-depth': 2,
+            'load-entity-refs': 'subject,file,taxonomy_term,taxonomy_vocabulary,node,field_collection_item',
+            'page': 0,
+        }
+        qs = urlencode(kwargs)
+        url = '{root}/node.json?{qs}'.format(root=self.api_url, qs=qs)
+        response = client.get(url)
+
+        if response.status_code is not 200:
+            raise NotImplementedError
+
+        data = response.json()
+
+        for xseries in data['list']:
+            xseries = self.clean_strings(xseries)
+            url = xseries['url']
+
+            try:
+                self.update_xseries(xseries)
+            except:  # pylint: disable=bare-except
+                logger.exception('Failed to load XSeries %s.', url)
+
+    def update_xseries(self, data):
+        marketing_slug = data['url'].split('/')[-1]
+        print(marketing_slug)
+        card_image, __ = Image.objects.get_or_create(src=data['field_card_image']['url'])
+        defaults = {
+            'title': data['title'],
+            'subtitle': data['field_xseries_subtitle_short'],
+            'category': 'XSeries',
+            'partner': self.partner,
+            'image': card_image,
+        }
+        Program.objects.update_or_create(marketing_slug=marketing_slug, defaults=defaults)
+
+        # TODO Update organizations
